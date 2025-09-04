@@ -66,6 +66,7 @@ class SRIDCalculator {
             const zone = e.target.value.replace('utm', '');
             if (zone) {
                 this.currentProjection = `+proj=utm +zone=${zone} +datum=WGS84 +units=m +no_defs`;
+                this.setMagneticDeclinationForZone(parseInt(zone));
             }
         });
 
@@ -79,6 +80,9 @@ class SRIDCalculator {
         document.getElementById('adjustClosure').addEventListener('click', () => this.adjustClosure());
         document.getElementById('toggleSidebar').addEventListener('click', () => this.toggleSidebar());
         document.getElementById('licenseBtn').addEventListener('click', () => this.showLicense());
+        document.getElementById('export').addEventListener('click', () => this.exportData());
+        document.getElementById('exportAll').addEventListener('click', () => this.exportAllFormats());
+        document.getElementById('import').addEventListener('change', (e) => this.importData(e));
         
         setTimeout(() => this.fixSelectStyles(), 100);
     }
@@ -90,6 +94,33 @@ class SRIDCalculator {
             select.style.color = '#fff';
             select.style.border = '1px solid #444';
         });
+    }
+
+    setMagneticDeclinationForZone(zone) {
+        const declinations = {
+            // Україна
+            35: 5.5, 36: 7.0, 37: 8.5, 38: 10.0, 39: 11.5,
+            // Європа
+            30: 1.0, 31: 2.0, 32: 3.0, 33: 4.0, 34: 5.0,
+            // Росія/Білорусь
+            40: 13.0, 41: 14.5, 42: 16.0,
+            // Інші популярні зони
+            28: -1.0, 29: 0.0, 43: 17.5, 44: 19.0
+        };
+        
+        const declination = declinations[zone] || 7.0;
+        const input = document.getElementById('magneticDeclination');
+        
+        // Показуємо повідомлення про автоматичне встановлення
+        this.showNotification(`Магнітне схилення автоматично встановлено: ${declination}° (UTM зона ${zone})`);
+        
+        input.value = declination;
+        
+        // Підсвічуємо поле для показу зміни
+        input.style.background = 'rgba(139, 0, 0, 0.2)';
+        setTimeout(() => {
+            input.style.background = '';
+        }, 2000);
     }
 
     generateTable() {
@@ -117,9 +148,6 @@ class SRIDCalculator {
                 setTimeout(() => this.autoCalculate(), 100);
             });
         });
-        
-        document.getElementById('export').addEventListener('click', () => this.exportData());
-        document.getElementById('import').addEventListener('change', (e) => this.importData(e));
         
         setTimeout(() => this.fixSelectStyles(), 50);
     }
@@ -213,26 +241,64 @@ class SRIDCalculator {
     }
 
     exportData() {
+        const siteName = document.getElementById('siteName').value.trim();
+        if (!siteName) {
+            this.showError('Будь ласка, заповніть поле "Назва ділянки" перед експортом');
+            return;
+        }
+        
         const format = document.getElementById('exportFormat').value;
         const points = this.getPoints();
         
         switch(format) {
             case 'csv':
-                this.exportCSV(points);
+                this.exportCSV(points, siteName);
                 break;
             case 'kml':
-                this.exportKML(points);
+                this.exportKML(points, siteName);
                 break;
-
+            case 'kml-points':
+                this.exportKMLPoints(points, siteName);
+                break;
+            case 'kml-polygon':
+                this.exportKMLPolygon(points, siteName);
+                break;
             case 'json':
-                this.exportJSON(points);
+                this.exportJSON(points, siteName);
+                break;
+            case 'arcgis':
+                this.exportArcGIS(points, siteName);
                 break;
         }
     }
 
-    exportCSV(points) {
-        let csv = 'Від,До,Азимут (Магнітний),Азимут (Істинний),Відстань (м),Long/UTM X,Lat/UTM Y\n';
-        csv += 'From,To,Magnetic bearing,True bearing,Distance,,\n';
+    exportAllFormats() {
+        const siteName = document.getElementById('siteName').value.trim();
+        if (!siteName) {
+            this.showError('Будь ласка, заповніть поле "Назва ділянки" перед експортом');
+            return;
+        }
+        
+        const points = this.getPoints();
+        
+        // Експортуємо в усіх форматах з затримкою
+        this.exportCSV(points, siteName);
+        
+        setTimeout(() => {
+            if (this.currentProjection) {
+                this.exportKML(points, siteName);
+                setTimeout(() => this.exportKMLPoints(points, siteName), 200);
+                setTimeout(() => this.exportKMLPolygon(points, siteName), 400);
+                setTimeout(() => this.exportJSON(points, siteName), 600);
+                setTimeout(() => this.exportArcGIS(points, siteName), 800);
+            }
+        }, 200);
+        
+        this.showNotification('Експортовано в усіх доступних форматах!');
+    }
+
+    exportCSV(points, siteName) {
+        let csv = '"Від\nFrom","До\nTo","Азимут (Магнітний)\nMagnetic bearing","Азимут (Істинний)\nTrue bearing","Відстань (м)\nDistance","Long/UTM X","Lat/UTM Y"\n';
         
         const rows = document.querySelectorAll('.points-table tr');
         for (let i = 1; i < rows.length; i++) {
@@ -252,17 +318,29 @@ class SRIDCalculator {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'fieldcalc_data.csv';
+        a.download = `${siteName}.csv`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 
-    exportKML(points) {
+    exportKML(points, siteName) {
+        if (!this.currentProjection) {
+            this.showError('Оберіть систему координат перед експортом');
+            return;
+        }
+        
         const polygonPoints = points.filter(p => p.type === 'SP' || p.type.startsWith('TP'));
         
         let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
         kml += '<Document>\n';
-        kml += '<name>FieldCalc Survey</name>\n';
+        kml += `<name>${siteName}</name>\n`;
+        
+        // Add styles for different point types
+        kml += '<Style id="LMStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="BMStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/square.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="SPStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/target.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="TPStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/circle.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.0</scale>\n</IconStyle>\n</Style>\n';
         
         // Add style for polygon
         kml += '<Style id="polygonStyle">\n';
@@ -282,6 +360,13 @@ class SRIDCalculator {
             const latLng = proj4(this.currentProjection, 'EPSG:4326', point.coords);
             kml += '<Placemark>\n';
             kml += `<name>${point.type}</name>\n`;
+            
+            // Add style based on point type
+            if (point.type === 'LM') kml += '<styleUrl>#LMStyle</styleUrl>\n';
+            else if (point.type === 'BM') kml += '<styleUrl>#BMStyle</styleUrl>\n';
+            else if (point.type === 'SP') kml += '<styleUrl>#SPStyle</styleUrl>\n';
+            else kml += '<styleUrl>#TPStyle</styleUrl>\n';
+            
             kml += '<Point>\n';
             kml += `<coordinates>${latLng[0]},${latLng[1]},0</coordinates>\n`;
             kml += '</Point>\n';
@@ -321,13 +406,126 @@ class SRIDCalculator {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'fieldcalc_survey.kml';
+        a.download = `${siteName}.kml`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 
+    exportKMLPoints(points, siteName) {
+        if (!this.currentProjection) {
+            this.showError('Оберіть систему координат перед експортом');
+            return;
+        }
+        
+        let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+        kml += '<Document>\n';
+        kml += `<name>${siteName} - Точки</name>\n`;
+        
+        // Add styles for different point types
+        kml += '<Style id="LMStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="BMStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/square.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="SPStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/target.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.2</scale>\n</IconStyle>\n</Style>\n';
+        kml += '<Style id="TPStyle">\n<IconStyle>\n<Icon>\n<href>http://maps.google.com/mapfiles/kml/shapes/circle.png</href>\n</Icon>\n<color>ff2626dc</color>\n<scale>1.0</scale>\n</IconStyle>\n</Style>\n';
+        
+        // Add points only
+        points.forEach(point => {
+            const latLng = proj4(this.currentProjection, 'EPSG:4326', point.coords);
+            kml += '<Placemark>\n';
+            kml += `<name>${point.type}</name>\n`;
+            
+            if (point.type === 'LM') kml += '<styleUrl>#LMStyle</styleUrl>\n';
+            else if (point.type === 'BM') kml += '<styleUrl>#BMStyle</styleUrl>\n';
+            else if (point.type === 'SP') kml += '<styleUrl>#SPStyle</styleUrl>\n';
+            else kml += '<styleUrl>#TPStyle</styleUrl>\n';
+            
+            kml += '<Point>\n';
+            kml += `<coordinates>${latLng[0]},${latLng[1]},0</coordinates>\n`;
+            kml += '</Point>\n';
+            kml += '</Placemark>\n';
+        });
+        
+        kml += '</Document>\n';
+        kml += '</kml>';
+        
+        const blob = new Blob([kml], {type: 'application/vnd.google-earth.kml+xml'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${siteName}_points.kml`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
 
+    exportKMLPolygon(points, siteName) {
+        if (!this.currentProjection) {
+            this.showError('Оберіть систему координат перед експортом');
+            return;
+        }
+        
+        const polygonPoints = points.filter(p => p.type === 'SP' || p.type.startsWith('TP'));
+        
+        let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+        kml += '<Document>\n';
+        kml += `<name>${siteName} - Полігон</name>\n`;
+        
+        // Add style for polygon
+        kml += '<Style id="polygonStyle">\n';
+        kml += '<LineStyle>\n';
+        kml += '<color>ff0000dc</color>\n';
+        kml += '<width>3</width>\n';
+        kml += '</LineStyle>\n';
+        kml += '<PolyStyle>\n';
+        kml += '<color>660000dc</color>\n';
+        kml += '<fill>1</fill>\n';
+        kml += '<outline>1</outline>\n';
+        kml += '</PolyStyle>\n';
+        kml += '</Style>\n';
+        
+        // Add polygon only
+        if (polygonPoints.length >= 3) {
+            kml += '<Placemark>\n';
+            kml += `<name>${siteName}</name>\n`;
+            kml += '<styleUrl>#polygonStyle</styleUrl>\n';
+            kml += '<Polygon>\n';
+            kml += '<outerBoundaryIs>\n';
+            kml += '<LinearRing>\n';
+            kml += '<coordinates>\n';
+            
+            polygonPoints.forEach(point => {
+                const latLng = proj4(this.currentProjection, 'EPSG:4326', point.coords);
+                kml += `${latLng[0]},${latLng[1]},0 `;
+            });
+            
+            const firstLatLng = proj4(this.currentProjection, 'EPSG:4326', polygonPoints[0].coords);
+            kml += `${firstLatLng[0]},${firstLatLng[1]},0`;
+            
+            kml += '\n</coordinates>\n';
+            kml += '</LinearRing>\n';
+            kml += '</outerBoundaryIs>\n';
+            kml += '</Polygon>\n';
+            kml += '</Placemark>\n';
+        }
+        
+        kml += '</Document>\n';
+        kml += '</kml>';
+        
+        const blob = new Blob([kml], {type: 'application/vnd.google-earth.kml+xml'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${siteName}_polygon.kml`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
 
-    exportJSON(points) {
+    exportJSON(points, siteName) {
+        if (!this.currentProjection) {
+            this.showError('Оберіть систему координат перед експортом');
+            return;
+        }
+        
         const polygonPoints = points.filter(p => p.type === 'SP' || p.type.startsWith('TP'));
         
         const data = {
@@ -371,13 +569,80 @@ class SRIDCalculator {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'fieldcalc_survey.geojson';
+        a.download = `${siteName}.geojson`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    exportArcGIS(points, siteName) {
+        if (!this.currentProjection) {
+            this.showError('Оберіть систему координат перед експортом');
+            return;
+        }
+        
+        const polygonPoints = points.filter(p => p.type === 'SP' || p.type.startsWith('TP'));
+        
+        // Обчислюємо площу та периметр
+        const coords = polygonPoints.map(p => p.coords);
+        let area = 0, perimeter = 0;
+        
+        for (let i = 0; i < coords.length; i++) {
+            const j = (i + 1) % coords.length;
+            area += coords[i][0] * coords[j][1] - coords[j][0] * coords[i][1];
+            const dx = coords[j][0] - coords[i][0];
+            const dy = coords[j][1] - coords[i][1];
+            perimeter += Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        area = Math.abs(area) / 2 / 10000; // Конвертуємо в гектари
+        
+        // Створюємо GeoJSON для Shapefile
+        const geojson = {
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    properties: {
+                        Name: siteName,
+                        Area_Ha: parseFloat(area.toFixed(4)),
+                        Perim_m: Math.round(perimeter),
+                        Type: 'Survey_Area'
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            ...coords.map(coord => [coord[0], coord[1]]),
+                            [coords[0][0], coords[0][1]] // Замикаємо полігон
+                        ]]
+                    }
+                }
+            ]
+        };
+        
+        // Експортуємо як Shapefile
+        if (typeof shpwrite !== 'undefined') {
+            shpwrite.download(geojson, {
+                folder: siteName,
+                types: {
+                    polygon: siteName + '_polygon'
+                }
+            });
+            this.showNotification('Експортовано Shapefile для ArcGIS');
+        } else {
+            this.showError('Помилка: бібліотека Shapefile не завантажена');
+        }
     }
 
     importData(e) {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // Автозаповнення назви ділянки з назви файлу
+        const currentSiteName = document.getElementById('siteName').value.trim();
+        if (!currentSiteName) {
+            const fileName = file.name.replace(/\.[^/.]+$/, ''); // Видаляємо розширення
+            document.getElementById('siteName').value = fileName;
+        }
         
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -492,12 +757,17 @@ class SRIDCalculator {
                     }
                     
                     const inputs = ['lm', 'bm', 'sp', ...Array.from({length: this.pointCount}, (_, j) => `tp${j+1}`)];
-                    points.forEach((point, i) => {
-                        if (inputs[i]) {
-                            const xInput = document.getElementById(`${inputs[i]}_x`);
-                            const yInput = document.getElementById(`${inputs[i]}_y`);
-                            if (xInput) xInput.value = Math.round(point[0]);
-                            if (yInput) yInput.value = Math.round(point[1]);
+                    inputs.forEach((input, i) => {
+                        const xInput = document.getElementById(`${input}_x`);
+                        const yInput = document.getElementById(`${input}_y`);
+                        if (xInput && yInput) {
+                            if (points[i]) {
+                                xInput.value = Math.round(points[i][0]);
+                                yInput.value = Math.round(points[i][1]);
+                            } else {
+                                xInput.value = 0;
+                                yInput.value = 0;
+                            }
                         }
                     });
                     setTimeout(() => {
@@ -711,6 +981,7 @@ class SRIDCalculator {
     }
 
     reset() {
+        document.getElementById('siteName').value = '';
         document.getElementById('utmZone').value = '';
         document.getElementById('pointCount').value = 3;
         document.getElementById('magneticDeclination').value = 7;
