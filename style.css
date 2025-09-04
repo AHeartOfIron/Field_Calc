@@ -117,8 +117,24 @@ h1 {
 }
 
 .form-group select option {
-    background: #2a2a2a;
-    color: #fff;
+    background: #2a2a2a !important;
+    color: #fff !important;
+    padding: 8px !important;
+}
+
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23fff" d="M6 9L1.5 4.5h9z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 35px !important;
+}
+
+select:focus {
+    background-color: rgba(42, 42, 42, 0.95) !important;
 }
 
 .form-group input:focus,
@@ -234,6 +250,23 @@ h1 {
 .actions select {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid #444;
+}
+
+.actions select option {
+    background: #2a2a2a;
+    color: #fff;
+    padding: 8px;
+}
+
+#exportFormat {
+    background: rgba(42, 42, 42, 0.95) !important;
+    color: #fff !important;
+}
+
+#exportFormat option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    padding: 8px !important;
 }
 
 #results {
