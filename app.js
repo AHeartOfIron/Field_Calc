@@ -79,6 +79,17 @@ class SRIDCalculator {
         document.getElementById('adjustClosure').addEventListener('click', () => this.adjustClosure());
         document.getElementById('toggleSidebar').addEventListener('click', () => this.toggleSidebar());
         document.getElementById('licenseBtn').addEventListener('click', () => this.showLicense());
+        
+        setTimeout(() => this.fixSelectStyles(), 100);
+    }
+    
+    fixSelectStyles() {
+        const selects = document.querySelectorAll('select');
+        selects.forEach(select => {
+            select.style.backgroundColor = '#2a2a2a';
+            select.style.color = '#fff';
+            select.style.border = '1px solid #444';
+        });
     }
 
     generateTable() {
@@ -109,6 +120,8 @@ class SRIDCalculator {
         
         document.getElementById('export').addEventListener('click', () => this.exportData());
         document.getElementById('import').addEventListener('change', (e) => this.importData(e));
+        
+        setTimeout(() => this.fixSelectStyles(), 50);
     }
 
     autoCalculate() {
