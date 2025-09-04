@@ -251,6 +251,19 @@ class SRIDCalculator {
         kml += '<Document>\n';
         kml += '<name>FieldCalc Survey</name>\n';
         
+        // Add style for polygon
+        kml += '<Style id="polygonStyle">\n';
+        kml += '<LineStyle>\n';
+        kml += '<color>ff0000dc</color>\n'; // Red color (AABBGGRR format)
+        kml += '<width>3</width>\n';
+        kml += '</LineStyle>\n';
+        kml += '<PolyStyle>\n';
+        kml += '<color>660000dc</color>\n'; // Red with 40% opacity (66 = 40% of FF)
+        kml += '<fill>1</fill>\n';
+        kml += '<outline>1</outline>\n';
+        kml += '</PolyStyle>\n';
+        kml += '</Style>\n';
+        
         // Add points
         points.forEach(point => {
             const latLng = proj4(this.currentProjection, 'EPSG:4326', point.coords);
@@ -266,6 +279,7 @@ class SRIDCalculator {
         if (polygonPoints.length >= 3) {
             kml += '<Placemark>\n';
             kml += '<name>Survey Polygon</name>\n';
+            kml += '<styleUrl>#polygonStyle</styleUrl>\n';
             kml += '<Polygon>\n';
             kml += '<outerBoundaryIs>\n';
             kml += '<LinearRing>\n';
