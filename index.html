@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>FieldCalc</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="marker-labels.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <button id="toggleBtn" class="toggle-btn">☰</button>
+            <h1>Калькулятор полігонів</h1>
+            <div style="text-align: center; margin-top: -15px; margin-bottom: 5px; color: #8B0000; font-size: 12px; font-weight: 600; opacity: 0.8;">Відкрита бета версія 3.0</div>
+            <div style="text-align: center; margin-bottom: 20px; color: #ccc; font-size: 10px; opacity: 0.7;">Всі неполадки або пропозиції пишіть автору проекту</div>
+            
+            <div class="form-group site-name-group">
+                <label>Назва ділянки:</label>
+                <input type="text" id="siteName" placeholder="Введіть назву ділянки...">
+            </div>
+
+            <div class="form-group">
+                <label>Система координат <span class="info-tooltip" onclick="showTooltip(this, '<b>UTM (Universal Transverse Mercator)</b><br><br><b>Що це:</b> Система координат, яка ділить Землю на 60 зон по 6° довготи кожна.<br><br><b>Зони України:</b><br>• Зона 35N - західна частина<br>• Зона 36N - центральна частина<br>• Зона 37N - східна частина<br><br><b>Формат координат:</b> X (схід), Y (північ) в метрах<br><br><b>Датум:</b> WGS84 - світова геодезична система<br><br><b>Відмінність від широти/довготи:</b> UTM дає координати в метрах, що зручніше для точних вимірювань на місцевості.')">💡</span>:</label>
+                <select id="utmZone">
+                    <option value="">Оберіть зону UTM</option>
+                </select>
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="autoUTMZone" checked style="width: auto; margin: 0;">
+                    <label for="autoUTMZone" style="margin: 0; font-size: 12px; color: #888; cursor: pointer;">Автоматично визначати зону по геолокації</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Магнітне схилення <span class="info-tooltip" onclick="showTooltip(this, '<b>Магнітне схилення (Declination)</b><br><br><b>Що це:</b> Кут між магнітним півночем (куди показує компас) та істинним півночем (географічним).<br><br><b>Зони магнітного схилення в Україні:</b><br>• Західна Україна: +5° до +7°<br>• Центральна Україна: +7° до +8°<br>• Східна Україна: +8° до +11°<br><br><b>Чому важливо:</b> Компас показує магнітний північ через вплив магнітного поля Землі, а карти та GPS орієнтовані на істинний (географічний) північ. Різниця між ними змінюється залежно від місця на Землі.<br><br><b>Як використовувати:</b><br>• Істинний азимут = Магнітний азимут + Схилення<br>• Приклад: компас показує 90°, схилення +7° → істинний азимут 97°<br><br><b>Автоматичне встановлення:</b> Береться по місцезнаходженню точки SP. Можна вимкнути в налаштуваннях нижче.')">💡</span>:</label>
+                <input type="number" id="magneticDeclination" value="7" min="-360" max="360" placeholder="9.3 (9.312345)">
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="autoMagneticDeclination" checked style="width: auto; margin: 0;">
+                    <label for="autoMagneticDeclination" style="margin: 0; font-size: 12px; color: #888; cursor: pointer;">Автоматично розраховувати по координатах SP</label>
+                </div>
+            </div>
+            
+
+
+            <div class="form-group">
+                <label>Кількість точок:</label>
+                <input type="number" id="pointCount" value="3" min="1" max="20">
+                <div class="center-btn">
+                    <button id="generateTable">Змінити</button>
+                </div>
+            </div>
+
+            <div id="pointsTable"></div>
+            <div class="table-actions">
+                <button id="copyTable">📋 Копіювати таблицю</button>
+            </div>
+
+            <div class="actions">
+                <div class="action-row">
+                    <button id="calculate">Розрахувати</button>
+                    <button id="reset">Скинути</button>
+                </div>
+                <div class="action-row">
+                    <button id="adjustClosure">🔍 Діагностика</button>
+                    <button id="showImportMenu">Імпорт</button>
+                </div>
+                <div class="action-row">
+                    <button id="showExportMenu">Експорт</button>
+                </div>
+                <div class="action-row">
+                    <button id="showHistory">📚 Історія</button>
+                </div>
+                <input type="file" id="import" accept=".kml,.kmz" style="display:none">
+                <input type="file" id="importPolygon" accept=".kml,.kmz" style="display:none">
+                <input type="file" id="importTable" accept=".csv,.xlsx,.xls" style="display:none">
+            </div>
+            <input type="file" id="importShapefile" accept=".shp,.zip" style="display:none;">
+
+            <div id="results">
+                <table class="results-table">
+                    <tr>
+                        <td>Площа <span class="info-tooltip" onclick="showTooltip(this, 'Площа - це розмір поверхні ділянки, вимірюється в квадратних метрах (м²) або гектарах (га). 1 га = 10,000 м². Показує скільки землі займає ваша ділянка.')">💡</span></td>
+                        <td>
+                            <select id="areaUnit">
+                                <option value="m2" selected>м²</option>
+                                <option value="ha">га</option>
+                            </select>
+                        </td>
+                        <td id="area">-</td>
+                        <td><button class="copy-btn" onclick="window.calculator.copyValue('area')">📋</button></td>
+                    </tr>
+                    <tr>
+                        <td>Периметр <span class="info-tooltip" onclick="showTooltip(this, 'Периметр - це довжина кордону ділянки, вимірюється в метрах (м). Показує скільки потрібно паркану щоб огородити ділянку. Відрізняється від площі тим, що площа - це внутрішній простір, а периметр - це контур навколо.')">💡</span></td>
+                        <td>м</td>
+                        <td id="perimeter">-</td>
+                        <td><button class="copy-btn" onclick="window.calculator.copyValue('perimeter')">📋</button></td>
+                    </tr>
+                    <tr>
+                        <td>Похибка <span class="info-tooltip" onclick="showTooltip(this, 'Похибка замикання - це відсоток неточності вимірювань. Показує наскільки точно виміряна ділянка. Чим менше %, тим точніше. Ідеально: 0-0.1%, добре: 0.1-0.5%, потребує корекції: >0.5%.')">💡</span></td>
+                        <td>%</td>
+                        <td id="closureError">-</td>
+                        <td><button class="copy-btn" onclick="window.calculator.copyValue('closureError')">📋</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="error"></div>
+            
+            <div class="author-section">
+                <div class="author">Автор: Illia Usachov</div>
+                <div class="idea">Ідея додатку: The Halo Trust</div>
+                <div class="phone">📞 +380 98 008 84 15</div>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                    <button id="settingsBtn" class="license-btn">⚙️ Налаштування</button>
+                    <button id="licenseBtn" class="license-btn">Ліцензія</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.js"></script>
+    <script src="https://unpkg.com/leaflet-bearing@1.0.0/dist/leaflet-bearing.min.js"></script>
+    <script src="magnetic-declination.js"></script>
+    <script src="library-loader.js"></script>
+    <script src="library-functions.js"></script>
+    <script src="FileSaver.min.js"></script>
+    <script src="FileSaver.min.js"></script>
+
+    <script src="global-functions.js"></script>
+    <script src="modules/ui-helpers.js"></script>
+    <script src="modules/calculations-module.js"></script>
+    <script src="modules/map-manager.js"></script>
+    <script src="modules/export-module.js"></script>
+    <script src="modules/excel-export.js"></script>
+    <script src="modules/text-export.js"></script>
+    <script src="modules/pdf-export.js"></script>
+    <script src="modules/png-export.js"></script>
+    <script src="modules/kml-export.js"></script>
+    <script src="modules/qgis-export.js"></script>
+    <script src="modules/arcgis-export.js"></script>
+    <script src="modules/shp-export.js"></script>
+    <script src="modules/import-module.js"></script>
+    <script src="modules/basic-methods.js"></script>
+    <script src="coordinate-plugin.js"></script>
+    <script src="search-location.js"></script>
+    <script src="futuristic-compass.js"></script>
+    <script src="modules/marker-design.js"></script>
+    <script src="marker-styles.js"></script>
+    <script src="marker-icons.js"></script>
+    <script src="futuristic-icons.js"></script>
+    <script src="polygon-sync-plugin.js"></script>
+    
+    <!-- Окремі кнопки -->
+    <script src="buttons/search-button.js"></script>
+    <script src="buttons/fullscreen-button.js"></script>
+    <script src="buttons/cadastral-button.js"></script>
+    <script src="buttons/layers-button.js"></script>
+    <script src="buttons/sp-button.js"></script>
+    
+    <script src="app.js"></script>
+    <script src="toggle.js"></script>
+    <script src="init.js"></script>
+</body>
+</html>
