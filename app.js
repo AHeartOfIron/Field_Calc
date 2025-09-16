@@ -320,6 +320,8 @@ class SRIDCalculator {
                 }
                         // Оновлюємо магнітне схилення по SP координатах
                 this.updateMagneticDeclination();
+                // Автоматично перераховуємо таблицю при зміні зони
+                setTimeout(() => this.autoCalculateIfNeeded(), 200);
                 // Оновлюємо UTM сітку
                 this.hideUTMGrid();
                 setTimeout(() => this.addUTMGrid(), 100);
@@ -373,11 +375,15 @@ class SRIDCalculator {
         document.getElementById('copyTable').addEventListener('click', () => this.copyTable());
         document.getElementById('areaUnit').addEventListener('change', () => this.updateAreaDisplay());
         
-        // Обробник зміни магнітного схилення
+        // Обробник зміни магнітного схилення з автоперерахунком
         const magneticDeclinationInput = document.getElementById('magneticDeclination');
         if (magneticDeclinationInput) {
             magneticDeclinationInput.addEventListener('input', () => {
                 this.updateCompass();
+                clearTimeout(this.magneticDeclinationTimeout);
+                this.magneticDeclinationTimeout = setTimeout(() => {
+                    this.autoCalculateIfNeeded();
+                }, 300);
             });
         }
         
@@ -408,10 +414,13 @@ class SRIDCalculator {
         // Автозбереження
         setInterval(() => this.basicMethods ? this.basicMethods.autoSave() : this.autoSave(), 30000);
         
-        // Автооновлення магнітного схилення кожні 5 секунд
-        setInterval(() => {
+        // Автооновлення магнітного схилення кожні 5 секунд з перерахунком таблиці
+        setInterval(async () => {
             if (this.autoMagneticDeclination) {
-                this.updateMagneticDeclinationSilent();
+                const changed = await this.updateMagneticDeclinationSilent();
+                if (changed) {
+                    this.autoCalculateIfNeeded();
+                }
             }
         }, 5000);
         
@@ -580,6 +589,7 @@ class SRIDCalculator {
     }
 
     showExportMenu() {
+        this.syncPolygonWithMarkers(); // Синхронізуємо перед показом меню
         const siteName = document.getElementById('siteName')?.value?.trim() || 'polygon';
         const points = this.getPoints();
         
@@ -607,7 +617,7 @@ class SRIDCalculator {
                 <button id="exportQGISBtn" style="padding: 15px; background: #8B0000; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">🗂️ QGIS</button>
                 <button id="exportArcGISBtn" style="padding: 15px; background: #8B0000; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">🗃️ ArcGIS</button>
                 <button id="exportPNGBtn" style="padding: 15px; background: #8B0000; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">🖼️ PNG</button>
-                <button id="exportPDFBtn" style="padding: 15px; background: #8B0000; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">📑 PDF</button>
+
             </div>
             <button id="cancelExportBtn" style="padding: 12px 30px; background: #666; border: none; border-radius: 6px; color: white; cursor: pointer; width: 100%;">❌ Закрити</button>
         `;
@@ -648,14 +658,7 @@ class SRIDCalculator {
             }
             modal.remove(); 
         };
-        document.getElementById('exportPDFBtn').onclick = () => { 
-            if (this.pngExport && this.pngExport.exportPDF) {
-                this.pngExport.exportPDF(points, siteName);
-            } else {
-                this.showNotification('PDF експорт недоступний');
-            }
-            modal.remove(); 
-        };
+
         document.getElementById('cancelExportBtn').onclick = () => modal.remove();
         
         // Закриття по кліку поза модальним вікном
@@ -667,6 +670,14 @@ class SRIDCalculator {
     autoCalculate() {
         if (this.calculationsModule) {
             this.calculationsModule.autoCalculate();
+        }
+    }
+
+    // Автоматичний перерахунок тільки якщо є дані
+    autoCalculateIfNeeded() {
+        const points = this.getPoints();
+        if (points.length >= 3) {
+            this.autoCalculate();
         }
     }
 
@@ -1896,7 +1907,13 @@ class SRIDCalculator {
             
             const polygonLatLngs = polygonMarkers.map(m => m.getLatLng());
             this.polygon.setLatLngs(polygonLatLngs);
+            console.log('✅ Полігон синхронізовано з маркерами');
         }
+    }
+    
+    // Примусова синхронізація перед експортом
+    syncPolygonWithMarkers() {
+        this.updatePolygonFromMarkers();
     }
     
     // Оновлення полігону
@@ -2634,14 +2651,21 @@ class SRIDCalculator {
             const input = document.getElementById('magneticDeclination');
             
             if (input && declination !== null && !isNaN(declination)) {
+                const oldValue = parseFloat(input.value) || 0;
                 const rounded = Math.round(declination * 10) / 10;
-                input.value = rounded;
-                input.placeholder = `Авто: ${rounded}°`;
-                this.updateCompass();
+                
+                // Перераховуємо таблицю тільки при зміні схилення
+                if (Math.abs(oldValue - rounded) > 0.05) {
+                    input.value = rounded;
+                    input.placeholder = `Авто: ${rounded}°`;
+                    this.updateCompass();
+                    return true; // Повертаємо true якщо була зміна
+                }
             }
         } catch (error) {
             console.error('Silent magnetic declination update error:', error);
         }
+        return false;
     }
     
     // Оновлення магнітного схилення для конкретних координат
