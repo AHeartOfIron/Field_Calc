@@ -24,7 +24,7 @@ class UIHelpers {
     showNotification(message) {
         const notification = document.createElement('div');
         notification.style.cssText = `
-            position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); z-index: 10001;
+            position: fixed; top: 05%; left: 50%; transform: translate(-50%, -50%); z-index: 10001;
             background: #4ade80; color: white; padding: 12px 20px;
             border-radius: 6px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             animation: fadeIn 0.3s ease;
