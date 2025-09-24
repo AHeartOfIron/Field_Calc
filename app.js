@@ -271,7 +271,7 @@ class SRIDCalculator {
                 this.showNotification('Кадастровий шар вимкнено');
             } else {
                 // Спробуємо основний сервіс
-                window.cadastralLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{z}/{x}/{y}.png', {
+                window.cadastralLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{level}/{col}/{row}.png', {
                     attribution: 'Кадастрова карта України',
                     opacity: 0.7,
                     maxZoom: 18,
