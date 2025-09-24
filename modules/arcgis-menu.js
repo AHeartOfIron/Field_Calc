@@ -20,7 +20,6 @@ class ArcGISMenu {
                                 <button onclick="arcgisMenu.exportDBF()" class="arcgis-btn">📋 DBF</button>
                                 <button onclick="arcgisMenu.exportSHX()" class="arcgis-btn">🔍 SHX</button>
                                 <button onclick="arcgisMenu.exportPRJ()" class="arcgis-btn">🌍 PRJ</button>
-                                <button onclick="arcgisMenu.exportLYRStyles()" class="arcgis-btn">🎨 LYR Styles</button>
                                 <button onclick="arcgisMenu.exportInstructions()" class="arcgis-btn">📖 Instructions</button>
                             </div>
                         </div>
