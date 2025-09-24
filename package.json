@@ -1,0 +1,49 @@
+{
+  "name": "fieldcalc",
+  "version": "3.0.0",
+  "description": "Професійний веб-калькулятор для геодезичних розрахунків, визначення площ та периметрів земельних ділянок",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build process needed for static site'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "geodesy",
+    "surveying",
+    "polygon",
+    "utm",
+    "gis",
+    "mapping",
+    "coordinates",
+    "ukraine",
+    "геодезія",
+    "полігон"
+  ],
+  "author": {
+    "name": "Illia Usachov",
+    "email": "contact@example.com",
+    "phone": "+380 98 008 84 15",
+    "organization": "The Halo Trust"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/fieldcalc.git"
+  },
+  "homepage": "https://yourusername.github.io/fieldcalc",
+  "bugs": {
+    "url": "https://github.com/yourusername/fieldcalc/issues"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

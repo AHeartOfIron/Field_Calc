@@ -1,0 +1,850 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -webkit-system-ui, 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #0d0d0d;
+    color: #fff;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    position: relative;
+}
+
+
+
+.sidebar {
+    width: 760px;
+    height: 100vh;
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    border-right: 1px solid #444;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.toggle-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: #8B0000;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+    background: #660000;
+    transform: scale(1.1);
+}
+
+.sidebar.hidden {
+    transform: translateX(-100%);
+}
+
+.sidebar.hidden .toggle-btn {
+    position: fixed !important;
+    left: 10px !important;
+    top: 10px !important;
+    right: auto !important;
+    z-index: 10001 !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(139, 0, 0, 0.03) 2px, transparent 2px),
+        radial-gradient(circle at 80% 70%, rgba(139, 0, 0, 0.02) 1px, transparent 1px),
+        linear-gradient(45deg, transparent 48%, rgba(139, 0, 0, 0.01) 49%, rgba(139, 0, 0, 0.01) 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, rgba(139, 0, 0, 0.01) 49%, rgba(139, 0, 0, 0.01) 51%, transparent 52%);
+    background-size: 80px 80px, 120px 120px, 60px 60px, 60px 60px;
+    animation: geometryFloat 60s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes geometryFloat {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-2px, -3px) rotate(90deg); }
+    50% { transform: translate(2px, -2px) rotate(180deg); }
+    75% { transform: translate(-1px, 3px) rotate(270deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+#map {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
+.map-controls-grid,
+.map-controls-row {
+    pointer-events: auto !important;
+}
+
+.custom-zoom-control {
+    pointer-events: auto !important;
+}
+
+.expand-btn {
+    margin-bottom: 5px !important;
+}
+
+.leaflet-top.leaflet-left {
+    top: 10px !important;
+}
+
+.map-controls-grid,
+.map-controls-row {
+    position: relative !important;
+    margin: 0 !important;
+    z-index: 1000 !important;
+}
+
+.map-controls-grid button,
+.map-controls-row button {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+    border: 1px solid #8B0000 !important;
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a) !important;
+    color: #8B0000 !important;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 4px rgba(139, 0, 0, 0.3) !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.map-controls-grid button:hover,
+.map-controls-row button:hover {
+    background: #8B0000 !important;
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.5) !important;
+}
+
+.map-controls-grid button.active,
+.map-controls-row button.active {
+    background: #8B0000 !important;
+    color: white !important;
+    border-color: #ff4444 !important;
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.7) !important;
+}
+
+.custom-zoom-control button:hover {
+    background: #8B0000 !important;
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.5) !important;
+}
+
+.leaflet-control-layers {
+    top: 130px !important;
+    right: 10px !important;
+    background: rgba(26, 26, 26, 0.95) !important;
+    border: 1px solid #444 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-control-layers-toggle {
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a) !important;
+    border: 1px solid #8B0000 !important;
+    color: #8B0000 !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 4px !important;
+}
+
+.leaflet-control-layers-toggle:hover {
+    background: #8B0000 !important;
+    color: white !important;
+}
+
+.leaflet-control-layers-list {
+    background: rgba(26, 26, 26, 0.95) !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    padding: 10px !important;
+}
+
+.leaflet-control-layers label {
+    color: #fff !important;
+    font-size: 12px !important;
+    margin: 5px 0 !important;
+}
+
+.leaflet-control-layers input[type="radio"] {
+    margin-right: 8px !important;
+}
+
+h1 {
+    color: #fff;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 24px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.site-name-group {
+    background: rgba(139, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #8B0000;
+    margin-bottom: 25px !important;
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.3);
+}
+
+.site-name-group label {
+    color: #ff4444 !important;
+    font-weight: 700;
+    font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.site-name-group input {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid #ff4444 !important;
+    font-weight: 600;
+    color: #fff !important;
+    font-size: 15px;
+}
+
+.site-name-group input:focus {
+    border-color: #ff6666 !important;
+    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4) !important;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group select option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    padding: 8px !important;
+}
+
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23fff" d="M6 9L1.5 4.5h9z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 35px !important;
+}
+
+select:focus {
+    background-color: rgba(42, 42, 42, 0.95) !important;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.2);
+}
+
+.form-group button {
+    margin-left: 10px;
+    padding: 12px 20px;
+    background: linear-gradient(145deg, #8B0000, #660000);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.form-group button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
+}
+
+.center-btn {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.center-btn button {
+    margin-left: 0;
+}
+
+.points-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.points-table th,
+.points-table td {
+    padding: 14px 10px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    font-size: 12px;
+}
+
+.points-table td:last-child {
+    width: 80px;
+    min-width: 80px;
+}
+
+.points-table th {
+    background: linear-gradient(145deg, #8B0000, #660000);
+    color: #fff;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.points-table input {
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    min-width: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    text-align: center;
+}
+
+.points-table td {
+    color: #fff;
+}
+
+.points-table .auto {
+    color: #fff;
+    background: rgba(139, 0, 0, 0.3);
+}
+
+.points-table .auto {
+    background: rgba(139, 0, 0, 0.1);
+    color: #fff;
+    font-weight: 600;
+    position: relative;
+}
+
+.points-table tr {
+    position: relative;
+}
+
+.points-table tr:hover .copy-row-btn {
+    opacity: 1;
+}
+
+.copy-row-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.action-row {
+    display: flex;
+    gap: 10px;
+}
+
+.action-row button {
+    flex: 1 !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    background: linear-gradient(145deg, #8B0000, #660000) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+}
+
+.action-group button,
+.action-group select {
+    flex: 1;
+}
+
+.actions button,
+.actions select {
+    padding: 12px 16px !important;
+    background: linear-gradient(145deg, #8B0000, #660000) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    user-select: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+.actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
+}
+
+.actions select {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+}
+
+.actions select option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    padding: 8px !important;
+}
+
+/* Примусові стилі для всіх select */
+select {
+    background-color: #2a2a2a !important;
+    color: #fff !important;
+}
+
+select option {
+    background-color: #2a2a2a !important;
+    color: #fff !important;
+}
+
+#exportFormat {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+}
+
+#exportFormat option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    padding: 8px !important;
+}
+
+/* Додаткові стилі для всіх браузерів */
+select#exportFormat {
+    background-color: #2a2a2a !important;
+    color: white !important;
+}
+
+select#exportFormat:focus {
+    background-color: #2a2a2a !important;
+    color: white !important;
+}
+
+select#exportFormat option:checked {
+    background-color: #8B0000 !important;
+    color: white !important;
+}
+
+#results {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border: 1px solid #444;
+}
+
+#error {
+    background: linear-gradient(145deg, #8B0000, #660000);
+    color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+    display: none;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
+}
+
+.author-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+    text-align: center;
+}
+
+.author {
+    color: #fff;
+    font-size: 12px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.idea {
+    color: #888;
+    font-size: 11px;
+    margin-bottom: 5px;
+    font-style: italic;
+}
+
+.phone {
+    color: #fff;
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 500;
+    background: rgba(139, 0, 0, 0.1);
+    padding: 5px 10px;
+    border-radius: 15px;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    display: inline-block;
+}
+
+.license-btn {
+    background: transparent;
+    border: 1px solid #8B0000;
+    color: #8B0000;
+    padding: 5px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.3s ease;
+}
+
+.license-btn:hover {
+    background: #8B0000;
+    color: white;
+}
+
+.leaflet-control-search {
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+/* Старі стилі видалено, використовуємо нові стилі для сітки */
+
+@keyframes activeButton {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.leaflet-control-attribution::after {
+    content: ' | Illia Usachov ©';
+    font-weight: bold;
+}
+
+.table-actions {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.table-actions button {
+    padding: 8px 16px;
+    background: linear-gradient(145deg, #8B0000, #660000);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.table-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.4);
+}
+
+.copy-row-btn {
+    background: none;
+    border: none;
+    color: #8B0000;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 5px;
+    margin-left: 5px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.copy-row-btn:hover {
+    background: rgba(139, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.results-table td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    font-size: 13px;
+    color: #ccc;
+}
+
+.results-table td:nth-child(3) {
+    color: #fff;
+    font-weight: 600;
+}
+
+.results-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+}
+
+#areaUnit {
+    background: #2a2a2a !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+    border-radius: 4px;
+    font-size: 11px;
+    padding: 4px 8px;
+    width: 60px;
+}
+
+#areaUnit option {
+    background: #2a2a2a !important;
+    color: #fff !important;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    color: #8B0000;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+    background: rgba(139, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.info-tooltip {
+    display: inline-block;
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 16px;
+    opacity: 0.8;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.info-tooltip:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.custom-tooltip {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.leaflet-control-cadastral {
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    margin-top: 10px;
+}
+
+
+
+/* Стрілка півночі */
+.leaflet-control-north {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    z-index: 1002 !important;
+    pointer-events: none;
+}
+
+.north-arrow {
+    font-size: 24px;
+    color: #dc2626;
+    text-shadow: 0 0 4px rgba(220, 38, 38, 0.8), 0 2px 4px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.6));
+}
+
+.north-arrow span {
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 2px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    text-shadow: none;
+}
+
+/* Поворот карти */
+.leaflet-container {
+    transition: transform 0.3s ease;
+}
+
+/* UTM Grid стилі */
+.utm-grid-line {
+    pointer-events: none;
+    opacity: 0.2;
+}
+
+/* Магнітна сітка */
+.magnetic-grid-line {
+    pointer-events: none;
+    opacity: 0.08;
+}
+
+
+
+/* Анімація для компасу */
+@keyframes compassSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.compass-spinning {
+    animation: compassSpin 0.5s ease-in-out;
+}
+
+.leaflet-control-measure {
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    margin-top: 10px;
+}
+
+.leaflet-control-measure button {
+    width: 30px;
+    height: 30px;
+    background: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.leaflet-control-measure button:hover {
+    background: #f0f0f0;
+    transform: scale(1.1);
+}
+
+.cadastral-overlay {
+    filter: sepia(100%) hue-rotate(200deg) saturate(200%);
+}
+
+/* Стилі для 4K експорту */
+.marker-tooltip-4k {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    border: 2px solid #000 !important;
+    border-radius: 6px !important;
+    font-size: 24px !important;
+    font-weight: bold !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+.marker-tooltip-4k::before {
+    border-top-color: #000 !important;
+}
+
+.custom-marker-enhanced {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Drag and Drop для таблиці */
+tr[draggable="true"] {
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+tr[draggable="true"]:hover {
+    background: rgba(139, 0, 0, 0.05);
+}
+
+tr[draggable="true"].dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
