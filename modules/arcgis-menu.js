@@ -228,10 +228,6 @@ class ArcGISMenu {
         this.arcgisExport.exportSHPStyle(this.siteName);
     }
 
-    exportLYRStyles() {
-        this.arcgisExport.exportSHPStyle(this.siteName);
-    }
-
     exportInstructions() {
         this.arcgisExport.exportInstruction(this.siteName);
     }
