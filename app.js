@@ -271,17 +271,20 @@ class SRIDCalculator {
                 this.showNotification('Кадастровий шар вимкнено');
             } else {
                 // Спробуємо основний сервіс
-                window.cadastralLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{level}/{col}/{row}.png', {
-                    attribution: 'Кадастрова карта України',
-                    opacity: 0.7,
-                    maxZoom: 18,
-                    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                window.cadastralLayer = L.tileLayer('https://map.land.gov.ua/kadastrova-karta/{z}/{x}/{y}.png', {
+                    attribution: 'Державний земельний кадастр України',
+                    opacity: 0.6,
+                    maxZoom: 18
                 });
                 
-                // Обробник помилки завантаження
+                // Fallback на старий сервіс
                 window.cadastralLayer.on('tileerror', () => {
-                    console.warn('Кадастровий шар недоступний');
-                    this.showNotification('⚠️ Кадастровий шар тимчасово недоступний');
+                    this.map.removeLayer(window.cadastralLayer);
+                    window.cadastralLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{z}/{x}/{y}.png', {
+                        attribution: 'Кадастрова карта України',
+                        opacity: 0.7,
+                        maxZoom: 18
+                    }).addTo(this.map);
                 });
                 
                 window.cadastralLayer.addTo(this.map);
